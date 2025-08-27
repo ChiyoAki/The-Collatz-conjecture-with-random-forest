@@ -1,0 +1,85 @@
+from collections import defaultdict
+import pandas as pd
+import math
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+
+def collatz_sequence(n): #создаёт список всех чисел за время итераций до 1 
+    sequence = [n]
+    while n != 1:
+        if n % 2 == 0:
+            n = n // 2
+        else:
+            n = 3 * n + 1
+        sequence.append(n)
+    return sequence
+
+def collatz_steps(n): #ищет кол-во итераций до 1
+    steps = 0
+    while n != 1:
+        if n % 2 == 0:
+            n = n // 2
+        else:
+            n = 3 * n + 1
+        steps += 1
+    return steps
+
+def create_data(start, end): 
+    data = defaultdict(list)
+    for i in range(start, end):
+        num = i
+
+        data[i].append(bin(num).lstrip('0b')) #число в двоичной системе
+        data[i].append(bin(num).count('1')) #кол-во бинарных 1
+
+        seq = collatz_sequence(num)
+        max_val = max(seq) # Максимальное значение в последовательности итераций
+        data[i].append(max_val)
+
+        data[i].append(max_val / num) #Во сколько раз максимальное значение превышает исходное число
+  
+        data[i].append(collatz_steps(num)) #кол-во итераций до 1
+    
+    data_for_tree = pd.DataFrame.from_dict(data, orient='index')
+    data_for_tree = data_for_tree.reset_index()
+    data_for_tree.columns = ['number', 
+                             'bin_num', 
+                             'binary_ones', 
+                             'max_value', 
+                             'ratio_max_to_n', 
+                             'steps_to_1']
+
+    return data_for_tree
+
+data_for_tree = create_data(1, 10001)
+
+clf_rf = RandomForestClassifier(random_state=42)
+X = data_for_tree[['number', 'bin_num', 'binary_ones', 'max_value', 'ratio_max_to_n']]
+y = data_for_tree['steps_to_1']
+
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+from sklearn.model_selection import GridSearchCV, KFold
+cv = KFold(5, shuffle=True, random_state=42)
+
+parametrs = {'n_estimators': [30, 90],
+             'max_depth': range (1, 300, 50)}
+
+grid_search_cv_clf = GridSearchCV(clf_rf, parametrs, cv=cv, n_jobs=-1) #за нас ищет лучшие показатели точности
+grid_search_cv_clf.fit(X_train, y_train)
+
+print("Лучшие параметры:", grid_search_cv_clf.best_params_)
+best_clf = grid_search_cv_clf.best_estimator_
+
+def accuracy_with_tolerance(y_true, y_pred, tolerance=5):
+    return np.mean(np.abs(y_true - y_pred) <= tolerance)
+
+y_pred = best_clf.predict(X_test)
+
+print(f"Точность (0 шагов погрешности): {best_clf.score(X_test, y_test)}")
+print(f"Точность (±5 шагов): {accuracy_with_tolerance(y_test, y_pred, 5)}")
+print(f"Точность (±10 шагов): {accuracy_with_tolerance(y_test, y_pred, 10)}")
+
