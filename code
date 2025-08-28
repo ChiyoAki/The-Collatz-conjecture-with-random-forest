@@ -26,6 +26,10 @@ def create_data(start, end):
         max_val = max(seq) # Максимальное значение в последовательности итераций
         data[i].append(max_val)
 
+        data[i].append(num % 2) #остаток от деления на 2
+        data[i].append(num % 4) #остаток от деления на 4 
+        data[i].append(num % 8) #остаток от деления на 8
+
         data[i].append(max_val / num) #Во сколько раз максимальное значение превышает исходное число
   
         data[i].append(len(collatz_sequence(num))) #кол-во итераций до 1
@@ -36,6 +40,9 @@ def create_data(start, end):
                              'bin_num', 
                              'binary_ones', 
                              'max_value', 
+                             'mod_2',
+                             'mod_4',
+                             'mod_8',
                              'ratio_max_to_n', 
                              'steps_to_1']
 
