@@ -3,8 +3,10 @@ import pandas as pd
 import math
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from typing import List
+from pandas import DataFrame
 
-def collatz_sequence(n): #создаёт список всех чисел за время итераций до 1 
+def collatz_sequence(n: int) -> List[int]: #вычисляет последовательность Коллатца для заданного числа
     sequence = [n]
     while n != 1:
         if n % 2 == 0:
@@ -14,7 +16,7 @@ def collatz_sequence(n): #создаёт список всех чисел за �
         sequence.append(n)
     return sequence
 
-def create_data(start, end): 
+def create_data(start: int, end: int) -> DataFrame: 
     data = defaultdict(list)
     for i in range(start, end):
         num = i
